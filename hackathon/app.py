@@ -1,79 +1,62 @@
-import streamlit as st
-import json
 import pandas as pd
-from dotenv import load_dotenv
-from langchain.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_google_genai import ChatGoogleGenerativeAI
+import streamlit as st
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
+from langchain.vectorstores import Chroma
+from dotenv import load_dotenv
 
 load_dotenv()
 
-# Load LLM & Vectorstore
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2)
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 vectorstore = Chroma(persist_directory="./vs_store_gemini", embedding_function=embeddings)
 retriever = vectorstore.as_retriever()
 rag_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
-# Logic
-def is_genuine_engagement(messages: list) -> bool:
-    return len(messages) >= 2 and any("thank" in m.lower() or "discuss" in m.lower() for m in messages)
+def is_tech_connection(title: str, domain: str = "AI or software or EdTech") -> str:
+    prompt = f"""
+    Is this job title likely related to {domain}?
+    Title: {title}
 
-def is_domain_relevant_rag(profile_bio: str, domain: str = "AI in Education") -> bool:
-    prompt = f"Is this person relevant to {domain}?\n\nBio: {profile_bio}\n\nAnswer only yes or no with a reason."
-    result = rag_chain.run(prompt)
-    return "yes" in result.lower()
+    Answer yes or no with a short reason.
+    """
+    return rag_chain.run(prompt)
 
-def verify_connection(conn: dict, domain: str = "AI in Education") -> dict:
-    name = conn.get("name", "Unknown")
-    messages = conn.get("messages", [])
-    profile_bio = conn.get("profile_bio", "")
+# Streamlit App
+st.set_page_config(page_title="LinkedIn Tech Verifier")
+st.title("👥 LinkedIn Connection Relevance Checker")
 
-    genuine = is_genuine_engagement(messages)
-    relevant = is_domain_relevant_rag(profile_bio, domain)
-    score = int(genuine) + int(relevant)
+uploaded = st.file_uploader("Upload scraped connections CSV", type="csv")
 
-    return {
-        "name": name,
-        "genuine": genuine,
-        "relevant": relevant,
-        "score": score
-    }
+if uploaded:
+    df = pd.read_csv(uploaded)
 
-# Streamlit UI
-st.set_page_config(page_title="🔍 Network Verifier", layout="centered")
-st.title("🔍 Professional Network Verifier Agent")
-st.caption("Check if your LinkedIn/email connections are genuine and domain-relevant (e.g., AI in EdTech).")
+    if not {"Name", "Title", "Messages", "Endorsements", "Events"}.issubset(df.columns):
+        st.error("CSV must contain columns: Name, Title, Messages, Endorsements, Events")
+    else:
+        verified = []
+        tech_count = 0
 
-uploaded_file = st.file_uploader("Upload Connection JSON", type=["json"])
+        for _, row in df.iterrows():
+            name = row["Name"]
+            title = row["Title"]
+            messages = row["Messages"]
+            endorsements = row["Endorsements"]
+            events = row["Events"]
 
-if uploaded_file is not None:
-    data = json.load(uploaded_file)
-    student_id = data.get("student_id", "unknown")
-    connections = data.get("connections", [])
+            result = is_tech_connection(title)
+            relevant = "yes" in result.lower()
+            if relevant:
+                tech_count += 1
 
-    st.subheader(f"👤 Student ID: `{student_id}`")
-    st.write(f"🔄 Verifying {len(connections)} connections...")
+            verified.append({
+                "Name": name,
+                "Title": title,
+                "Messages": messages,
+                "Endorsements": endorsements,
+                "Events": events,
+                "Gemini Output": result.strip()
+            })
 
-    verified = []
-    with st.spinner("Running Gemini agent..."):
-        for conn in connections:
-            result = verify_connection(conn)
-            verified.append(result)
-
-    df = pd.DataFrame(verified)
-    st.success("✅ Verification Complete!")
-    st.dataframe(df, use_container_width=True)
-
-    output_json = {
-        "student_id": student_id,
-        "verified_connections": verified
-    }
-
-    st.download_button(
-        label="📥 Download Results",
-        data=json.dumps(output_json, indent=2),
-        file_name=f"{student_id}_verified_results.json",
-        mime="application/json"
-    )
+        st.success(f"{tech_count} tech industry connections found.")
+        st.dataframe(pd.DataFrame(verified))
