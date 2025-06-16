@@ -37,26 +37,29 @@ if uploaded:
         verified = []
         tech_count = 0
 
-        for _, row in df.iterrows():
-            name = row["Name"]
-            title = row["Title"]
-            messages = row["Messages"]
-            endorsements = row["Endorsements"]
-            events = row["Events"]
+        with st.spinner("🤖 AI agent is verifying your LinkedIn connections..."):
+            for _, row in df.iterrows():
+                name = row["Name"]
+                title = row["Title"]
+                messages = row["Messages"]
+                endorsements = row["Endorsements"]
+                events = row["Events"]
 
-            result = is_tech_connection(title)
-            relevant = "yes" in result.lower()
-            if relevant:
-                tech_count += 1
+                result = is_tech_connection(title)
+                relevant = "yes" in result.lower()
+                if relevant:
+                    tech_count += 1
 
-            verified.append({
-                "Name": name,
-                "Title": title,
-                "Messages": messages,
-                "Endorsements": endorsements,
-                "Events": events,
-                "Gemini Output": result.strip()
-            })
+                verified.append({
+                    "Name": name,
+                    "Title": title,
+                    "Messages": messages,
+                    "Endorsements": endorsements,
+                    "Events": events,
+                    "Gemini Output": result.strip()
+                })
 
         st.success(f"{tech_count} tech industry connections found.")
-        st.dataframe(pd.DataFrame(verified))
+        result_df = pd.DataFrame(verified)
+        result_df.index = result_df.index + 1  # Make index start from 1
+        st.dataframe(result_df)
