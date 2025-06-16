@@ -1,0 +1,21 @@
+{
+  "student_id": "stu001",
+  "connections": [
+    {
+      "name": "Dr. Ravi Kumar",
+      "linkedin_url": "https://linkedin.com/in/ravikumar",
+      "messages": [
+        "Hi, I’m working on AI in EdTech",
+        "Happy to help, I lead an EdTech AI team at XYZ",
+        "Thanks for the insights!"
+      ],
+      "profile_bio": "EdTech Leader. AI Researcher. Speaker at global ML forums."
+    },
+    {
+      "name": "John Doe",
+      "linkedin_url": "https://linkedin.com/in/johndoe",
+      "messages": ["Hi", "Thanks"],
+      "profile_bio": "Freelancer, Marketing consultant."
+    }
+  ]
+}
