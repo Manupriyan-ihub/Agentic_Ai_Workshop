@@ -63,3 +63,4 @@ if uploaded:
         result_df = pd.DataFrame(verified)
         result_df.index = result_df.index + 1  # Make index start from 1
         st.dataframe(result_df)
+        st.dataframe(result_df, use_container_width=True)
