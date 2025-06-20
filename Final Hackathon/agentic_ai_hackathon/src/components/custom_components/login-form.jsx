@@ -65,7 +65,7 @@ export function LoginForm({ className, ...props }) {
 
         const fakeResponse = {
           user: {
-            name: 'Ravi',
+            name: 'Student',
             email: data.email,
             avatar:
               'https://img.freepik.com/premium-photo/color-user-icon-white-background_961147-8.jpg?ga=GA1.1.914827653.1703252761&semt=ais_hybrid&w=740',

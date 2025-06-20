@@ -13,7 +13,11 @@ const Layout = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   const toggle = () => setIsCollapsed((prev) => !prev);
-  return <h1>Title</h1>;
+  return (
+    <>
+      <h1>Dashboard Page</h1>
+    </>
+  );
 };
 
 export default Layout;

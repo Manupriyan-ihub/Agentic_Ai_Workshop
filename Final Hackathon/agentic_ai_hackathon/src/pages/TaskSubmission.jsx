@@ -8,6 +8,7 @@ import { useState } from 'react';
 import { ClipLoader, PacmanLoader } from 'react-spinners';
 import { toast } from 'react-toastify';
 import EvaluationFeedback from '@/components/custom_components/EvaluationFeedback';
+import FeedbackDisplay from '@/components/custom_components/feedback_display';
 
 // 1. Zod schema for LinkedIn URL validation
 const linkedinSchema = z.object({
@@ -23,7 +24,7 @@ const linkedinSchema = z.object({
 // 3. Component
 const LinkedInForm = () => {
   const [loading, setLoading] = useState(false);
-  const [report, setReport] = useState({});
+  const [report, setReport] = useState({ title: {}, result: {} });
   const { user_id } = useSelector((state) => state.auth.user);
   const {
     register,
@@ -64,6 +65,8 @@ const LinkedInForm = () => {
     }
   };
 
+  console.log({ report });
+
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="mt-10 space-y-4">
@@ -98,6 +101,7 @@ const LinkedInForm = () => {
         )}
       </form>
       {/* {report && <EvaluationFeedback data={report} />} */}
+      <FeedbackDisplay data={report || ''} />
     </>
   );
 };
