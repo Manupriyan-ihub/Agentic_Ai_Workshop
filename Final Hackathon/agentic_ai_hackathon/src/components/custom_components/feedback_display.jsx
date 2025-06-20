@@ -3,26 +3,25 @@ import React from 'react';
 const FeedbackDisplay = ({ data }) => {
   if (!data || !data.result) return null;
 
-  // If result is a string (old case), try to parse it
-  const result = typeof data.result === 'string' ? {} : data.result;
+  const resultText = typeof data.result === 'string' ? data.result : '';
 
-  // Also check if data.result might be a stringified object
-  const fallbackResult =
-    typeof data.result === 'string' && data.result.includes('{')
-      ? JSON.parse(data.result.replace(/'/g, '"'))
-      : {};
+  // 1. Extract and parse Relevance block
+  const relevanceMatch = resultText.match(/🧠 Relevance:\s*({[\s\S]*?})/);
+  const relevance = relevanceMatch
+    ? JSON.parse(relevanceMatch[1].replace(/'/g, '"'))
+    : null;
 
-  // Check depth/originality and relevance inside fallbackResult if result is empty
-  const relevanceOutput =
-    result?.output ||
-    fallbackResult?.output ||
-    'Relevance feedback not available';
-  const depthOutput = data?.depth || 'Depth feedback not available';
-  const socialImpactMatch =
-    typeof data.result === 'string'
-      ? data.result.match(/Social Impact Score:\s*(\d+)\/100/)
-      : null;
-  const socialImpact = socialImpactMatch?.[1] || '0';
+  // 2. Extract and parse Depth Evaluation block
+  const depthMatch = resultText.match(/📚 Depth Evaluation:\s*({[\s\S]*?})/);
+  const depth = depthMatch
+    ? JSON.parse(depthMatch[1].replace(/'/g, '"'))
+    : null;
+
+  // 3. Extract Social Impact Score
+  const socialImpactMatch = resultText.match(
+    /📢 Social Impact Score:\s*(\d+)\/100/,
+  );
+  const socialImpact = socialImpactMatch?.[1] || 'N/A';
 
   return (
     <div className="mx-auto max-w-xl space-y-6 rounded-xl bg-white p-6 shadow-lg">
@@ -31,12 +30,16 @@ const FeedbackDisplay = ({ data }) => {
       </h2>
 
       <div className="space-y-2 text-gray-700">
-        <p>
-          <strong>🔍 Relevance:</strong> {relevanceOutput}
-        </p>
-        <p>
-          <strong>📚 Depth Evaluation:</strong> {depthOutput}
-        </p>
+        {relevance?.output && (
+          <p>
+            <strong>🔍 Relevance:</strong> {relevance.output}
+          </p>
+        )}
+        {depth?.output && (
+          <p>
+            <strong>📚 Depth Evaluation:</strong> {depth.output}
+          </p>
+        )}
         <p>
           <strong>📢 Social Impact Score:</strong> {socialImpact}/100
         </p>
