@@ -27,12 +27,12 @@ export function AppSidebar({ isCollapsed, ...props }) {
   // Define sidebar navigation items
   const navigationItems = [
     {
-      path: '/dashboard',
+      path: '/user/dashboard',
       label: 'Dashboard',
       icon: LayoutDashboard,
     },
     {
-      path: '/task-submission',
+      path: '/user/task-submission',
       label: 'Task Submission',
       icon: Upload,
     },
@@ -58,14 +58,18 @@ export function AppSidebar({ isCollapsed, ...props }) {
                   <SidebarMenuButton
                     tooltip={item.label}
                     isActive={isActive}
-                    className={`text-color1 hover:text-primary min-h-[2.5rem] w-full group-data-[collapsible=icon]:justify-center hover:bg-blue-50 ${
+                    className={`text-color1 flex min-h-[2.5rem] w-full items-center justify-start gap-3 rounded-lg transition-all duration-200 ease-in-out group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-1 ${
                       isActive
-                        ? 'bg-gradient-custom text-white hover:text-white [&>svg]:text-white'
-                        : 'hover:text-primary hover:bg-blue-50'
+                        ? 'from-primary bg-gradient-to-r to-blue-600 text-white [&>svg]:text-white'
+                        : 'hover:text-primary hover:bg-blue-100'
                     }`}
                   >
                     <item.icon className="h-6 w-6 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
-                    <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">
+                    <span
+                      className={`text-sm font-medium group-data-[collapsible=icon]:hidden ${
+                        isActive ? 'text-white' : ''
+                      }`}
+                    >
                       {item.label}
                     </span>
                   </SidebarMenuButton>
@@ -76,7 +80,7 @@ export function AppSidebar({ isCollapsed, ...props }) {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter> 
+      <SidebarFooter>
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />

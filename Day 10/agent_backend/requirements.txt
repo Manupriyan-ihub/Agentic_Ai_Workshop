@@ -7,3 +7,5 @@ python-dotenv
 beautifulsoup4
 langchain
 langchain-community
+google-generativeai
+motor
