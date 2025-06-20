@@ -1,0 +1,32 @@
+Mongodb and essential methods
+
+Mongoose methods are functions that operate on either model instances (instance methods) or the model itself (static methods) to interact with MongoDB. Instance methods are available on individual document instances, while static methods are called on the model constructor. Examples include find, findOne, create, save, deleteOne, updateOne, and many more, allowing for various CRUD operations and other functionalities. 
+Instance Methods:
+save(): Saves the current document to the database, triggering validation and middleware. Useful for creating new documents or updating existing ones. 
+remove(): Removes the document from the database. 
+updateOne(): Updates the document in the database based on the provided criteria. 
+deleteOne(): Deletes the document from the database. 
+update(): Updates the document. 
+validate(): Validates the document's data against its schema. 
+toJSON(): Converts the document to a plain JavaScript object, often used for sending data to clients. 
+toObject(): Similar to toJSON(), but returns a plain JavaScript object without the default Mongoose modifications. 
+Static Methods:
+find(): Retrieves documents that match a given query.
+findOne(): Retrieves a single document that matches a given query.
+findById(): Retrieves a document by its ID.
+create(): Creates and saves a new document.
+updateMany(): Updates multiple documents that match a given query.
+deleteOne(): Deletes a single document that matches a given query.
+deleteMany(): Deletes multiple documents that match a given query.
+exists(): Checks if a document matching the query exists.
+where(): Allows building complex queries by chaining conditions.
+countDocuments(): Counts the number of documents matching a query.
+estimatedDocumentCount(): Provides an estimate of the number of documents in a collection.
+bulkWrite(): Executes multiple write operations (insert, update, delete) in a single command. 
+Schema Methods:
+Mongoose also allows defining custom methods on schemas, which can be either instance methods (accessible on document instances) or static methods (accessible on the model constructor). 
+Instance Methods:
+Defined using schema.methods, these methods can access and modify the document instance they are called on. 
+Static Methods:
+Defined using schema.statics, these methods are accessible on the model itself and can be used for tasks like custom query building or data manipulation at the collection level. 
+These are just some of the commonly used Mongoose methods. The library offers a rich API for interacting with MongoDB, providing flexibility and control over data management. 
