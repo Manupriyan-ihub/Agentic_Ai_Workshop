@@ -11,11 +11,12 @@ import { useState } from 'react';
 
 const UserLayout = () => {
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [pageName, setPageName] = useState('Dashboard');
 
   const toggle = () => setIsCollapsed((prev) => !prev);
   return (
     <SidebarProvider>
-      <AppSidebar isCollapsed={isCollapsed} />
+      <AppSidebar isCollapsed={isCollapsed} setPageName={setPageName} />
 
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
@@ -26,6 +27,7 @@ const UserLayout = () => {
               className="mr-2 data-[orientation=vertical]:h-4"
             />
           </div>
+          <span className="text-2xl font-bold">{pageName}</span>
         </header>
 
         {/* Main Content */}

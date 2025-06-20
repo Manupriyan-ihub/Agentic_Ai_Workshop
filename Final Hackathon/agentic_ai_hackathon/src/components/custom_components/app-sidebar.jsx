@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useSelector } from 'react-redux';
 
-export function AppSidebar({ isCollapsed, ...props }) {
+export function AppSidebar({ setPageName, isCollapsed, ...props }) {
   const user = useSelector((state) => state.auth.user);
 
   // Define sidebar navigation items
@@ -63,6 +63,7 @@ export function AppSidebar({ isCollapsed, ...props }) {
                         ? 'from-primary bg-gradient-to-r to-blue-600 text-white [&>svg]:text-white'
                         : 'hover:text-primary hover:bg-blue-100'
                     }`}
+                    onClick={() => setPageName(item.label)}
                   >
                     <item.icon className="h-6 w-6 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
                     <span
