@@ -1,13 +1,15 @@
-from langchain_community.vectorstores import Chroma  # ✅ Fixed
-from langchain_google_genai import GoogleGenerativeAIEmbeddings  # ✅ Fixed
+from langchain.agents import Tool, initialize_agent, AgentType
+from langchain_community.vectorstores import Chroma
+from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from utils import extract_score
 import os
-import re
+from dotenv import load_dotenv
 
+load_dotenv()
+
+# Load the retriever (RAG memory)
 def load_reference_okr():
     loader = TextLoader("data/okr_reference.txt")
     documents = loader.load()
@@ -20,12 +22,22 @@ def load_reference_okr():
         google_api_key=os.getenv("GOOGLE_API_KEY")
     )
 
-    vectordb = Chroma.from_documents(docs, embedding=embeddings, persist_directory="./chroma_okr")
+    vectordb = Chroma.from_documents(
+        docs,
+        embedding=embeddings,
+        persist_directory="./chroma_okr"
+    )
     vectordb.persist()
 
     return vectordb.as_retriever()
 
-def check_relevance(article_text: str, project_title: str) -> str:
+# Tool function: returns relevance score (0–100)
+def check_relevance_tool_fn(input_text: str) -> str:
+    try:
+        article_text, project_title = input_text.split("||")
+    except ValueError:
+        return "Input must be in the format: <article_text>||<project_title>"
+
     retriever = load_reference_okr()
 
     llm = ChatGoogleGenerativeAI(
@@ -37,16 +49,36 @@ def check_relevance(article_text: str, project_title: str) -> str:
 
     prompt = f"""Assess how the following article aligns with the module and project:
 
-    Article Content:
-    {article_text[:4000]}
+Article Content:
+{article_text[:4000]}
 
-    Project Title: {project_title}
+Project Title: {project_title}
 
-    Evaluate relevance based on Learning objectives, Project theme match, Semantic & keyword overlap:
-    - Give just a score out of 100 with respect to the retreiver data
-    """
+Evaluate relevance based on Learning objectives, Project theme match, Semantic & keyword overlap.
+Just return a single score from 0–100.
+"""
 
     result = rag_chain.run(prompt)
-    return result[:2]
-    
+    return f"Relevance Score: {result.strip()}"
 
+# Tool wrapper
+tools = [
+    Tool(
+        name="OKRRelevanceTool",
+        func=check_relevance_tool_fn,
+        description="Checks how relevant an article is to a given OKR/project using RAG. Input format: <article_text>||<project_title>"
+    )
+]
+
+# Agent setup
+okr_relevance_agent = initialize_agent(
+    tools,
+    ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=os.getenv("GOOGLE_API_KEY")),
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
+
+# Runner
+def run_okr_relevance_agent(article_text: str, project_title: str):
+    combined = f"{article_text}||{project_title}"
+    return {"relevance": okr_relevance_agent.invoke(combined)}

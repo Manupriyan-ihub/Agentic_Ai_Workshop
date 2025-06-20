@@ -1,3 +1,4 @@
+from langchain.agents import Tool, initialize_agent, AgentType
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 import os
@@ -11,7 +12,8 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.7
 )
 
-prompt_template = PromptTemplate.from_template("""
+# Prompt Template
+depth_prompt = PromptTemplate.from_template("""
 You are an academic writing evaluator. Assess the following article content for depth and originality.
 
 ARTICLE:
@@ -33,6 +35,28 @@ Sentiment: <type>, <1-5>
 Application: <1-5>
 """)
 
-def evaluate_depth_and_originality(article: str) -> str:
-    chain = prompt_template | llm
+# Tool function
+def depth_eval_tool_fn(article):
+    chain = depth_prompt | llm
     return chain.invoke({"article": article})
+
+# Wrap as LangChain Tool
+tools = [
+    Tool(
+        name="DepthOriginalityTool",
+        func=depth_eval_tool_fn,
+        description="Evaluates article depth, originality, sentiment, and application"
+    )
+]
+
+# Initialize Agent
+depth_originality_agent = initialize_agent(
+    tools,
+    llm,
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    verbose=True
+)
+
+# Runner
+def run_depth_originality_agent(article: str):
+    return {"evaluation": depth_originality_agent.invoke(article)}

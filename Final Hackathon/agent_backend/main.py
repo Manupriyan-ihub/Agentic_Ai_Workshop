@@ -1,15 +1,19 @@
 from fastapi import FastAPI
 from datetime import datetime
-from agent.extract_content import extract_from_linkedin
-from agent.relevance_rag_agent import check_relevance
-from agent.depth_originality_agent import evaluate_depth_and_originality
-from agent.social_impact_agent import assess_social_impact
-from agent.feedback_agent import generate_feedback
+import logging
+
+from agent.extract_content import run_linkedin_extraction_agent
+from agent.relevance_rag_agent import run_okr_relevance_agent
+from agent.depth_originality_agent import run_depth_originality_agent
+from agent.social_impact_agent import run_social_impact_agent
+from agent.feedback_agent import run_feedback_aggregator_agent
+
 from db.mongo import collection
 from pydantic import BaseModel
 import requests
 from bs4 import BeautifulSoup
 from fastapi.middleware.cors import CORSMiddleware
+import re
 
 
 app = FastAPI()
@@ -20,6 +24,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class VerifyRequest(BaseModel):
     url: str
@@ -33,27 +41,41 @@ class VerifyResponse(BaseModel):
 
 @app.post("/verify", response_model=VerifyResponse)
 async def verify(payload: VerifyRequest):
-    if "linkedin.com" not in payload.url.lower():
-        return {"result": "Invalid URL", "valid": False, "feedback": "Only LinkedIn URLs are allowed."}
+    try:
+        if "linkedin.com" not in payload.url.lower():
+            return {
+                "result": "Invalid URL",
+                "valid": False,
+                "feedback": "Only LinkedIn URLs are allowed."
+            }
 
-    # Step 1: Extract article
-    extraction_result = await extract_from_linkedin(payload.url)
-    if "error" in extraction_result:
-        return {"result": extraction_result["error"], "valid": False, "feedback": "Extraction failed."}
+        # Step 1: LinkedIn Extraction Agent
+        extraction_result = (await run_linkedin_extraction_agent(payload.url)).get("extracted", {})
+        if "error" in extraction_result:
+            return {
+                "result": extraction_result["error"],
+                "valid": False,
+                "feedback": "Extraction failed."
+            }
 
-    article_text = extraction_result.get("summary", "")
+        article_text = extraction_result.get("summary", "")
 
-    # Step 2: OKR Relevance Agent
-    relevance_result = check_relevance(article_text, payload.article_title)
+        # Step 2: OKR Relevance Agent
+        relevance_output = run_okr_relevance_agent(article_text, payload.article_title)
+        relevance_result = relevance_output.get("relevance", "")
 
-    # Step 3: Depth & Originality Agent
-    depth_eval = evaluate_depth_and_originality(article_text)
+        # Step 3: Depth & Originality Agent
+        depth_output = run_depth_originality_agent(article_text)
+        depth_eval = depth_output.get("evaluation", "")
 
-    # Step 4: Social Impact Agent
-    social_score = assess_social_impact(article_text)
+        # Step 4: Social Impact Agent
+        social_output = run_social_impact_agent(article_text)
+        engagement_output = social_output.get("engagement", {}).get("output", "")
+        match = re.search(r"(\d+)\s+out of\s+100", engagement_output)
+        social_score = int(match.group(1)) if match else 0
 
-    # Step 5: Final Feedback Agent
-    full_result = f"""
+        # Step 5: Feedback Aggregator Agent
+        full_result = f"""
 🧠 Relevance: {relevance_result}
 
 📚 Depth Evaluation:
@@ -61,33 +83,49 @@ async def verify(payload: VerifyRequest):
 
 📢 Social Impact Score: {social_score}/100
 """
-    feedback_summary = generate_feedback(full_result)
 
-    # Step 6: Validity Check
-    is_valid = (
-        "relevant" in relevance_result.lower()
-        or "aligned" in relevance_result.lower()
-    ) and "Summary:" in depth_eval and social_score >= 50
+        feedback_output = run_feedback_aggregator_agent(full_result)
+        feedback_summary = feedback_output.get("feedback", "")
 
-    # Step 7: Store in MongoDB
-    doc = {
-        "user_id": payload.user_id,
-        "url": payload.url,
-        "article_title": payload.article_title,
-        "relevance_result": relevance_result,
-        "depth_eval": str(depth_eval.content if hasattr(depth_eval, "content") else depth_eval),
-        "social_score": social_score,
-        "feedback": feedback_summary["feedback"],
-        "is_valid": is_valid,
-        "created_at": datetime.utcnow(),
-    }
-    await collection.insert_one(doc)
+        # Step 6: Validity Check
+        relevance_output_text = relevance_result.get("output", "").lower()
+        depth_eval_text = depth_eval.get("evaluation", "") if isinstance(depth_eval, dict) else str(depth_eval)
 
-    return {
-        "result": full_result.strip(),
-        "feedback": feedback_summary["feedback"].strip(),
-        "valid": is_valid
-    }
+        is_valid = (
+            "relevant" in relevance_output_text
+            or "aligned" in relevance_output_text
+        ) and "summary:" in depth_eval_text.lower() and social_score >= 50
+
+        # Step 7: Store in MongoDB
+        doc = {
+            "user_id": payload.user_id,
+            "url": payload.url,
+            "article_title": payload.article_title,
+            "relevance_result": relevance_result,
+            "depth_eval": depth_eval,
+            "social_score": social_score,
+            "feedback": feedback_summary,
+            "is_valid": is_valid,
+            "created_at": datetime.utcnow(),
+        }
+        await collection.insert_one(doc)
+        # Step 8: Return response
+        return {
+            "result": full_result.strip(),
+            "feedback": (
+                feedback_summary.get("feedback", "") 
+                if isinstance(feedback_summary, dict) 
+                else str(feedback_summary)
+            ).strip(),
+            "valid": is_valid
+        }
+    except Exception as e:
+        logger.error(f"Error in /verify endpoint: {e}", exc_info=True)
+        return {
+            "result": "Internal server error",
+            "valid": False,
+            "feedback": str(e)
+        }
 
 
 class LinkRequest(BaseModel):
