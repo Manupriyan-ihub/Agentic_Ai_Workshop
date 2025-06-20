@@ -1,24 +1,28 @@
 import React from 'react';
 
 const FeedbackDisplay = ({ data }) => {
-  if (!data || !data.feedback || !data.result) {
-    return null; // Or a fallback UI like <p>No feedback yet</p>
-  }
+  if (!data || !data.result) return null;
 
-  const { feedback } = data;
+  // If result is a string (old case), try to parse it
+  const result = typeof data.result === 'string' ? {} : data.result;
 
-  // Extract scores from feedback
-  const relevance = feedback.match(/Relevance: (\d+)/)?.[1];
-  const insight = feedback.match(/Insight: (\d+)/)?.[1];
-  const engagement = feedback.match(/Engagement: (\d+)/)?.[1];
-  const average = feedback.match(/Average: ([\d.]+)/)?.[1];
+  // Also check if data.result might be a stringified object
+  const fallbackResult =
+    typeof data.result === 'string' && data.result.includes('{')
+      ? JSON.parse(data.result.replace(/'/g, '"'))
+      : {};
 
-  // Extract reflection prompt and improvement suggestions
-  const reflectionPrompt = feedback.match(/Reflection Prompt:\n“([^”]+)”/)?.[1];
-  const suggestions = feedback
-    ?.match(/Improvement Suggestions:\n([\s\S]*)/)?.[1]
-    ?.split(/\n\d\.\s+/)
-    .filter(Boolean);
+  // Check depth/originality and relevance inside fallbackResult if result is empty
+  const relevanceOutput =
+    result?.output ||
+    fallbackResult?.output ||
+    'Relevance feedback not available';
+  const depthOutput = data?.depth || 'Depth feedback not available';
+  const socialImpactMatch =
+    typeof data.result === 'string'
+      ? data.result.match(/Social Impact Score:\s*(\d+)\/100/)
+      : null;
+  const socialImpact = socialImpactMatch?.[1] || '0';
 
   return (
     <div className="mx-auto max-w-xl space-y-6 rounded-xl bg-white p-6 shadow-lg">
@@ -26,40 +30,17 @@ const FeedbackDisplay = ({ data }) => {
         🧠 AI Feedback Summary
       </h2>
 
-      <div className="space-y-1 text-gray-700">
+      <div className="space-y-2 text-gray-700">
         <p>
-          <strong>Relevance:</strong> {relevance}/100
+          <strong>🔍 Relevance:</strong> {relevanceOutput}
         </p>
         <p>
-          <strong>Insight:</strong> {insight}/100
+          <strong>📚 Depth Evaluation:</strong> {depthOutput}
         </p>
         <p>
-          <strong>Engagement:</strong> {engagement}/100
-        </p>
-        <p>
-          <strong>Average Score:</strong> {average}/100
+          <strong>📢 Social Impact Score:</strong> {socialImpact}/100
         </p>
       </div>
-
-      {reflectionPrompt && (
-        <div className="rounded border-l-4 border-yellow-400 bg-yellow-50 p-4">
-          <p className="font-semibold">🪞 Reflection Prompt:</p>
-          <p>{reflectionPrompt}</p>
-        </div>
-      )}
-
-      {suggestions?.length > 0 && (
-        <div>
-          <p className="font-semibold text-gray-800">
-            🔧 Improvement Suggestions:
-          </p>
-          <ul className="list-inside list-disc space-y-1 text-gray-700">
-            {suggestions.map((tip, index) => (
-              <li key={index}>{tip.trim()}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 };
