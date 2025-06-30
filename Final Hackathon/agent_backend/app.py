@@ -6,6 +6,22 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from db.mongo import db 
+from fastapi import FastAPI
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # Optional if using .env file
+
+app = FastAPI()
+
+# MongoDB connection
+MONGO_URI = os.getenv("MONGO_URI")
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["okr_verifier"]
+collection = db["verifications"]
+
+
 
 from agents.linkedin_scraper_agent import extract_linkedin_content
 from agents.relevance_rag_agent import run_okr_relevance_agent
@@ -150,3 +166,14 @@ def verify_metadata(link: LinkRequest):
         }
     else:
         return {"error": "Could not fetch URL", "status_code": response.status_code}
+    
+
+
+@app.get("/verifications")
+async def get_all_verifications():
+    records = []
+    cursor = collection.find({})
+    async for document in cursor:
+        document["_id"] = str(document["_id"])  # Convert ObjectId to string
+        records.append(document)
+    return {"verifications": records}
