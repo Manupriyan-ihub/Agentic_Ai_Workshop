@@ -1,12 +1,18 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { LayoutDashboardIcon, ListTodoIcon, LogOutIcon } from "lucide-react";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
   const navigation = [
-    { name: "Dashboard", href: "/", icon: "📈" },
-    { name: "Task Submission", href: "/task-submission", icon: "🖋️" },
+    { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboardIcon /> },
+    {
+      name: "Task Submission",
+      href: "/task-submission",
+      icon: <ListTodoIcon />,
+    },
   ];
 
   const isActive = (href) => {
@@ -14,6 +20,12 @@ export default function Layout() {
       return location.pathname === "/";
     }
     return location.pathname.startsWith(href);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("userData");
+    // setIsLoggedIn(false);
+    navigate("/"); // Adjust the route as needed
   };
 
   return (
@@ -91,7 +103,14 @@ export default function Layout() {
           {/* Footer */}
           <div className="p-4 border-t border-purple-500/30 relative z-10">
             <div className="text-xs text-purple-200 text-center bg-purple-800/20 rounded-lg py-2 px-3 backdrop-blur-sm">
-              © 2025 GenAI Hackathon
+              {/* © 2025 GenAI Hackathon */}
+              <button
+                onClick={handleLogout}
+                className="px-6 py-3 w-full flex items-center rounded-2xl gap-5  bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xl shadow-lg shadow-purple-500/25 transform scale-105 border border-purple-400/30"
+              >
+                <LogOutIcon />
+                Logout
+              </button>
             </div>
           </div>
         </div>
