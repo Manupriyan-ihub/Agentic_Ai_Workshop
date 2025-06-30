@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import re
 import requests
 from bs4 import BeautifulSoup
+from db.mongo import db 
 
 from agents.linkedin_scraper_agent import extract_linkedin_content
 from agents.relevance_rag_agent import run_okr_relevance_agent
@@ -89,6 +90,14 @@ async def verify(payload: VerifyRequest):
             article=article_content
         )
 
+        result_doc = {
+            "url":payload.url, 
+            "article_title": payload.article_title,
+            "user_id": payload.user_id,
+            "score_feedback": feedback
+        }  
+
+        await db["verifications"].insert_one(result_doc)
 
         return {
             "result": "Extraction and relevance analysis successful",
