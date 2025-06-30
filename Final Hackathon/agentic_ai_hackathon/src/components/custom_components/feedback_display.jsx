@@ -3,6 +3,8 @@ import React from 'react';
 const FeedbackDisplay = ({ data }) => {
   if (!data || !data.result) return <p>No feedback available.</p>;
 
+  console.log({ data });
+
   let relevance, depthFeedback, socialImpact;
 
   try {

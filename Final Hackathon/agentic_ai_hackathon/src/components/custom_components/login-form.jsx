@@ -75,7 +75,7 @@ export function LoginForm({ className, ...props }) {
         };
 
         dispatch(loginSuccess(fakeResponse));
-        navigate('/user/dashboard');
+        navigate('/user/task-submission');
         toast.success('Login Successful!');
       } else {
         dispatch(loginFailure('Invalid credentials.'));

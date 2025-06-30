@@ -11,7 +11,7 @@ function AppRouter() {
         <Route path="/" element={<Login />} />
         {/* Nested user routes */}
         <Route path="/user" element={<UserLayout />}>
-          <Route path="dashboard" element={<HomePage />} />
+          {/* <Route path="dashboard" element={<HomePage />} /> */}
           <Route path="task-submission" element={<TaskSubmission />} />
         </Route>
       </Routes>

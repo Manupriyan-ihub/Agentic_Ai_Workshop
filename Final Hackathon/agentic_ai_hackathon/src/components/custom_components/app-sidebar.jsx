@@ -26,11 +26,11 @@ export function AppSidebar({ setPageName, isCollapsed, ...props }) {
 
   // Define sidebar navigation items
   const navigationItems = [
-    {
-      path: '/user/dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-    },
+    // {
+    //   path: '/user/dashboard',
+    //   label: 'Dashboard',
+    //   icon: LayoutDashboard,
+    // },
     {
       path: '/user/task-submission',
       label: 'Task Submission',
