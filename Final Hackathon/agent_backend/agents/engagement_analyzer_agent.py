@@ -13,7 +13,6 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=os.getenv("GOOGLE_API_KEY"),
     temperature=0.4
 )
-
 # Prompt Template
 engagement_prompt = PromptTemplate.from_template("""
 You are a social engagement analyst.
